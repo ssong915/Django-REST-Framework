@@ -227,3 +227,32 @@ class UserDetail(generics.RetrieveAPIView):
     serializer_class = UserSerializer
     
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.reverse import reverse
+
+
+@api_view(['GET'])
+def api_root(request, format=None):
+    return Response({
+        'users': reverse('user-list', request=request, format=format),
+        'snippets': reverse('snippet-list', request=request, format=format)
+    })
+
+from rest_framework import renderers
+from rest_framework.response import Response
+
+# 기본 클래스를 사용한다.
+# 객체 인스턴스(Snippet)를 반환하는 것이 아니라, 
+# 객체 인스턴스의 속성 중 하나(Snippet.highlighted)를 반환해야 하기 때문이다. 
+# concrete generic view를 사용하는 대신, 기본 클래스를 사용하고 자체 .get() 함수를 만들어 보자. 
+class SnippetHighlight(generics.GenericAPIView):
+    queryset = Snippet.objects.all()
+    renderer_classes = [renderers.StaticHTMLRenderer]
+
+    # 자체 get() 함수를 구현한다.
+    def get(self, request, *args, **kwargs):
+        snippet = self.get_object()
+        
+        # Snippet.highlighted를 반환한다.
+        return Response(snippet.highlighted)
