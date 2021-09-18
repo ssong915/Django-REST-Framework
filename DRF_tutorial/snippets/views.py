@@ -183,15 +183,47 @@ from snippets.models import Snippet
 from snippets.serializers import SnippetSerializer
 from rest_framework import generics
 
-
+from rest_framework import permissions
+ # 접근권한을 위한 permission클래스들!
+ # 로그인 유저만 생성,수정,삭제할 수 잇게 해보장 
+ # 사용법: 먼저 사용하고자 하는 Permission 클래스를 import 하고,
+ # 해당 접근 권한을 설정할 뷰의 permission_classes 변수에 그 Permission 클래스를 명시해주면 된다.
+from snippets.permissions import IsOwnerOrReadOnly
+ # 만들어둔 넘 갖다 쓰기
 class SnippetList(generics.ListCreateAPIView):
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
+
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    # 인증이 이뤄진(= 로그인한 상태의) 요청들: 읽기 및 쓰기 권한을 가지도록 하고, 
+    # 인증이 이뤄지지 않은(= 로그인하지 않은 상태의) 요청: 읽기 권한만
+
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user) 
+        # Snippet 인스턴스를 생성할 때 request 객체로 넘어오는 User 인스턴스가 연결
+        # User가 request 객체에 담겨옴
+        #serializer.save할때 user정보도 넘겨줄 수 있음
+    
 
 
 class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
 
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly] 
+
+
+
+from django.contrib.auth.models import User
+from snippets.serializers import UserSerializer
+
+class UserList(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+class UserDetail(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
     
 
