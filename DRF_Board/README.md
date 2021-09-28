@@ -1,4 +1,4 @@
-## DRF 게시판 만들기
+## DRF 로  CRUD 연습하기
 
 ### REST (REpresentational State Transfer)
 
