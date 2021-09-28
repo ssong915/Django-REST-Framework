@@ -192,30 +192,77 @@ from rest_framework import permissions
  # 해당 접근 권한을 설정할 뷰의 permission_classes 변수에 그 Permission 클래스를 명시해주면 된다.
 from snippets.permissions import IsOwnerOrReadOnly
  # 만들어둔 넘 갖다 쓰기
-class SnippetList(generics.ListCreateAPIView):
-    queryset = Snippet.objects.all()
-    serializer_class = SnippetSerializer
+# class SnippetList(generics.ListCreateAPIView):
+#     queryset = Snippet.objects.all()
+#     serializer_class = SnippetSerializer
 
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
-    # 인증이 이뤄진(= 로그인한 상태의) 요청들: 읽기 및 쓰기 권한을 가지도록 하고, 
-    # 인증이 이뤄지지 않은(= 로그인하지 않은 상태의) 요청: 읽기 권한만
+#     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+#     # 인증이 이뤄진(= 로그인한 상태의) 요청들: 읽기 및 쓰기 권한을 가지도록 하고, 
+#     # 인증이 이뤄지지 않은(= 로그인하지 않은 상태의) 요청: 읽기 권한만
 
 
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user) 
-        # Snippet 인스턴스를 생성할 때 request 객체로 넘어오는 User 인스턴스가 연결
-        # User가 request 객체에 담겨옴
-        #serializer.save할때 user정보도 넘겨줄 수 있음
+#     def perform_create(self, serializer):
+#         serializer.save(owner=self.request.user) 
+#         # Snippet 인스턴스를 생성할 때 request 객체로 넘어오는 User 인스턴스가 연결
+#         # User가 request 객체에 담겨옴
+#         #serializer.save할때 user정보도 넘겨줄 수 있음
     
 
 
-class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
+# class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
+#     queryset = Snippet.objects.all()
+#     serializer_class = SnippetSerializer
+
+#     permission_classes = [permissions.IsAuthenticatedOrReadOnly] 
+
+from rest_framework import renderers
+from rest_framework.response import Response
+
+# # 기본 클래스를 사용한다.
+# # 객체 인스턴스(Snippet)를 반환하는 것이 아니라, 
+# # 객체 인스턴스의 속성 중 하나(Snippet.highlighted)를 반환해야 하기 때문이다. 
+# # concrete generic view를 사용하는 대신, 기본 클래스를 사용하고 자체 .get() 함수를 만들어 보자. 
+# class SnippetHighlight(generics.GenericAPIView):
+#     queryset = Snippet.objects.all()
+#     renderer_classes = [renderers.StaticHTMLRenderer]
+
+#     # 자체 get() 함수를 구현한다.
+#     def get(self, request, *args, **kwargs):
+#         snippet = self.get_object()
+        
+#         # Snippet.highlighted를 반환한다.
+#         return Response(snippet.highlighted)
+
+# 6강 ViewSet을 이용한 리팩토링: SnippetList & SnippetDetail & SnippetHighlight -> SnippetViewSet 
+
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import permissions
+from rest_framework import viewsets
+
+#                    read/write 모든 작업을 제공한다.
+class SnippetViewSet(viewsets.ModelViewSet): # ModelViewSet: read,write 지원
+    """
+    This viewset automatically provides `list`, `create`, `retrieve`,
+    `update` and `destroy` actions.
+
+    Additionally we also provide an extra `highlight` action.
+    """
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,
+                          IsOwnerOrReadOnly]
 
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly] 
+	# @action: 기존 SnippetHighlight 뷰를 위해 별도 함수를 추가한다. 
+    @action(detail=True, renderer_classes=[renderers.StaticHTMLRenderer])
+    def highlight(self, request, *args, **kwargs):
+        snippet = self.get_object()
+        return Response(snippet.highlighted)
 
-
+	# 이전과 마찬가지로, user와 이어주기 위해 perform_create를 오버라이드한다.
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+#----------------------------------------------------------------------
 
 # from django.contrib.auth.models import User
 # from snippets.serializers import UserSerializer
@@ -228,7 +275,7 @@ class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
 #     queryset = User.objects.all()
 #     serializer_class = UserSerializer
     
-# 6강 ViewSet을 이용한 리팩토링
+# 6강 ViewSet을 이용한 리팩토링: UserList & UserDetail -> UserViewSet 
 from django.contrib.auth.models import User
 from snippets.serializers import UserSerializer
 from rest_framework import viewsets
@@ -254,20 +301,3 @@ def api_root(request, format=None):
         'snippets': reverse('snippet-list', request=request, format=format)
     })
 
-from rest_framework import renderers
-from rest_framework.response import Response
-
-# 기본 클래스를 사용한다.
-# 객체 인스턴스(Snippet)를 반환하는 것이 아니라, 
-# 객체 인스턴스의 속성 중 하나(Snippet.highlighted)를 반환해야 하기 때문이다. 
-# concrete generic view를 사용하는 대신, 기본 클래스를 사용하고 자체 .get() 함수를 만들어 보자. 
-class SnippetHighlight(generics.GenericAPIView):
-    queryset = Snippet.objects.all()
-    renderer_classes = [renderers.StaticHTMLRenderer]
-
-    # 자체 get() 함수를 구현한다.
-    def get(self, request, *args, **kwargs):
-        snippet = self.get_object()
-        
-        # Snippet.highlighted를 반환한다.
-        return Response(snippet.highlighted)
