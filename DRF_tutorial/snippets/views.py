@@ -5,6 +5,7 @@
  # from rest_framework.parsers import JSONParser
  # from snippets.models import Snippet
  # from snippets.serializers import SnippetSerialize
+
  # #Read,Creat
  # @csrf_exempt
  # def snippet_list(request):
@@ -22,6 +23,7 @@
  #             serializer.save()
  #             return JsonResponse(serializer.data, status=201)
  #         return JsonResponse(serializer.errors, status=400
+ 
  # # Read, Upate,Delet
  # @csrf_exempt
  # def snippet_detail(request, pk):
@@ -215,17 +217,30 @@ class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 
+# from django.contrib.auth.models import User
+# from snippets.serializers import UserSerializer
+
+# class UserList(generics.ListAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = UserSerializer
+
+# class UserDetail(generics.RetrieveAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = UserSerializer
+    
+# 6강 ViewSet을 이용한 리팩토링
 from django.contrib.auth.models import User
 from snippets.serializers import UserSerializer
+from rest_framework import viewsets
 
-class UserList(generics.ListAPIView):
+# viewsets: drf에 포함된 추상클래스
+# get과 put 함수를 지원하지 않고, 대신 read와 update 함수를 지원
+class UserViewSet(viewsets.ReadOnlyModelViewSet): #Read only를 위해 ReadOnlyModelViewSet 클래스 추가
+    """
+    This viewset automatically provides `list` and `retrieve` actions.
+    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
-
-class UserDetail(generics.RetrieveAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
