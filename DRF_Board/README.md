@@ -1,6 +1,4 @@
-# Django-REST-Framework
-
-## DRF 로  CRUD 연습하기
+## DRF 게시판 만들기
 
 ### REST (REpresentational State Transfer)
 
