@@ -1,4 +1,4 @@
-from .models import Blog
+from .models import *
 from rest_framework import serializers
 
 class BlogSerializer(serializers.ModelSerializer):
@@ -6,4 +6,10 @@ class BlogSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source = 'user.nickname')
     class Meta:
         model = Blog
+        fields = '__all__' 
+
+class CommentSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source = 'user.nickname')
+    class Meta:
+        model = Comment
         fields = '__all__' 

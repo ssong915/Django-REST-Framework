@@ -21,3 +21,13 @@ class Blog(models.Model):
     def update_counter(self):
         self.hits = self.hits+1
         self.save()
+    
+class Comment(models.Model):
+    id = models.AutoField(primary_key=True, null=False, blank=False)
+    blog = models.ForeignKey(Blog, null=False, blank=False, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, null=False, blank=False, on_delete=models.CASCADE)
+    created_at = models.DateField(auto_now_add=True, null=False, blank=False)
+    comment = models.TextField()
+
+    def __str__(self):
+        return self.comment
